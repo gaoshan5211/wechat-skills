@@ -1,66 +1,60 @@
 # WeChat Skill
 
-Agent Skill for sending WeChat messages on macOS. Control WeChat via AI conversation to send text and images to contacts or groups.
+Agent Skill for controlling the macOS WeChat desktop app through Accessibility APIs.
 
-This skill follows the [Agent Skills specification](https://agentskills.io/specification) so it can be used by any skills-compatible agent, including Claude Code and Codex CLI.
+This fork focuses on deterministic local CLI actions that Codex or another skills-compatible agent can call:
+
+- check WeChat status
+- open an exact contact or group chat
+- type text into the current chat input
+- send a text message
+
+It does not use YOLO, OCR, or Computer Use. It reads the macOS Accessibility tree and posts native Quartz input events.
 
 ## Installation
 
-### Marketplace
+Copy the `skills/wechat` directory into your Codex skills path, usually `~/.codex/skills/wechat`.
 
-Add this skill to your project:
+Install Python dependencies:
 
 ```bash
-/plugin marketplace add huangdijia/wechat-skills
-/plugin install wechat@wechat-skills
+python3 -m pip install pyobjc-framework-Cocoa pyobjc-framework-ApplicationServices pyobjc-framework-Quartz
 ```
 
-### Codex CLI
+Grant Accessibility permission to the app that runs the scripts:
 
-Copy the skills/ directory into your Codex skills path (typically ~/.codex/skills). See the Agent Skills specification for the standard skill format.
+1. Open System Settings > Privacy & Security > Accessibility.
+2. Add Terminal, iTerm2, VS Code, Codex, or the relevant Python host app.
+3. Enable the toggle.
 
-## Requirements
+## Usage
 
-- macOS 12+
-- Python 3.7+
-- WeChat desktop application (logged in)
-- Accessibility permissions enabled for your terminal/IDE
+```bash
+cd skills/wechat
 
-Grant accessibility permissions:
-
-1. Open **System Settings** > **Privacy & Security** > **Accessibility**
-2. Add your terminal application (Terminal, iTerm2, or VS Code)
-3. Enable the toggle
-
-## Capabilities
-
-- **Send text messages** to contacts or groups by name
-- **Send images** from local file paths
-- **Combine text and images** in a single message
-
-## Examples
-
-Send a text message:
-
-```
-给张三发微信说"晚上一起吃饭"
-Send a message to "John Doe" saying "Hello!"
+python3 scripts/wechat_cli.py status
+python3 scripts/wechat_cli.py open-chat --name "Contact Name"
+python3 scripts/wechat_cli.py input --message "Message content"
+python3 scripts/wechat_cli.py send --name "Contact Name" --message "Message content"
 ```
 
-Send an image:
+The legacy text-send command still works:
 
-```
-给李四发送图片 ~/Desktop/photo.png
-Send image ./screenshot.png to "Family Group"
-```
-
-Send both text and image:
-
-```
-给王五发消息"看看这个"并附带图片 ~/Downloads/image.jpg
-Send "Check this out!" with image ./chart.png to "Project Team"
+```bash
+python3 scripts/wechat_send.py --name "Contact Name" --message "Message content"
 ```
 
-## Notes
+## Behavior
 
-Contact names must match exactly as they appear in WeChat (case-sensitive). During execution, do not use your mouse or keyboard as it will interfere with the automation.
+The automation tries to open WeChat by bundle id `com.tencent.xinWeChat` when it is not running. It prefers exact matches from the recent chat list, then searches contacts and group chats through WeChat's search results. If no exact match is found, it returns candidate names in JSON instead of clicking an ambiguous result.
+
+## Limitations
+
+- WeChat must be logged in.
+- Contact and group names should match visible WeChat names exactly.
+- Text sending is supported. Image sending is not implemented in this Accessibility path.
+- The UI is operated in the foreground, so avoid using the mouse or keyboard during a command.
+
+## Attribution
+
+The Accessibility approach is adapted from the MIT-licensed ideas in `BiboyQG/WeChat-MCP`, with this repository kept as a Skill-style CLI package rather than an MCP server.

@@ -1,75 +1,57 @@
 ---
 name: WeChat
-description: macOS WeChat automation - sending messages and images via pyautogui keyboard simulation.
+description: Control the macOS WeChat desktop client through Accessibility APIs. Use when the user asks to check WeChat status, open a contact or group chat, type text, or send a text message from the local WeChat app.
 ---
 
 # WeChat
 
-macOS WeChat automation - sending messages and images via pyautogui keyboard simulation.
-
-## Features
-
-- Open WeChat (via Spotlight search)
-- Search for contacts/groups
-- Send text messages
-- Send images
+Use this skill to operate the local macOS WeChat desktop app with bundled Python scripts. The scripts use macOS Accessibility APIs and Quartz input events, not image recognition.
 
 ## Requirements
 
-- macOS system
-- Python 3.x
-- WeChat desktop app
-
-## Dependencies
+- macOS with WeChat desktop installed and logged in
+- Python 3.10+
+- Dependencies:
 
 ```bash
-pip install pyautogui pyperclip pyperclipimg
+python3 -m pip install pyobjc-framework-Cocoa pyobjc-framework-ApplicationServices pyobjc-framework-Quartz
 ```
 
-## Usage
+- Accessibility permission for the app running Codex or the terminal:
+  System Settings > Privacy & Security > Accessibility
+
+## Commands
+
+Run commands from this skill directory or pass the absolute script path.
 
 ```bash
-cd scripts
+# Check whether WeChat is running and whether AX can see chats.
+python3 scripts/wechat_cli.py status
 
-# Send text message
-python3 wechat_send.py --name "Contact Name" --message "Message content"
+# Open an exact contact or group chat.
+python3 scripts/wechat_cli.py open-chat --name "Contact Name"
 
-# Send image
-python3 wechat_send.py --name "Contact Name" --image_path="/path/to/image.png"
+# Fill the current chat input box without sending.
+python3 scripts/wechat_cli.py input --message "Message content"
 
-# Send both message and image
-python3 wechat_send.py --name "Contact Name" --message "Check this out" --image_path="test.png"
+# Open a chat and send a text message.
+python3 scripts/wechat_cli.py send --name "Contact Name" --message "Message content"
+
+# Compatibility wrapper for older usage.
+python3 scripts/wechat_send.py --name "Contact Name" --message "Message content"
 ```
 
-## Arguments
+## Workflow
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `--name` | Yes | Contact or group name |
-| `--message` | At least one | Text message to send |
-| `--image_path` | At least one | Path to image file |
+1. For any WeChat operation, first run `status` unless the user explicitly asks to send immediately.
+2. To send text, use `send --name ... --message ...`.
+3. If `send` returns `opened: false`, report the candidates from the JSON output and ask the user for a more exact chat name.
+4. If the script reports that WeChat is not running, rerun the requested command; it will try to launch WeChat by bundle id.
+5. If AX fields cannot be found, tell the user to grant Accessibility permission to Codex/Terminal and confirm WeChat is logged in.
 
-Note: At least one of `--message` or `--image_path` must be provided.
+## Notes
 
-## How It Works
-
-1. **Open WeChat**: Simulate `Cmd+Space` to open Spotlight, search for "WeChat" and launch
-2. **Search contact**: Simulate `Cmd+F` to open search, paste contact name, press Enter to enter chat
-3. **Send message**: Copy text to clipboard, paste and send
-4. **Send image**: Copy image to clipboard, paste and send
-
-## Important Notes
-
-- **Accessibility permission** is required for terminal/IDE (System Settings > Privacy & Security > Accessibility)
-- WeChat must be logged in
-- Contact name must match exactly as shown in WeChat
-- Do not operate mouse/keyboard during sending to avoid interference
-
-## File Structure
-
-```
-wechat-skill/
-├── SKILL.md              # This documentation
-├── scripts/
-│   └── wechat_send.py    # Main script
-```
+- Contact and group names should match the visible WeChat name exactly.
+- The current implementation supports status, opening chats, typing text, and sending text.
+- Image sending is intentionally not supported by the Accessibility implementation yet.
+- Do not use the mouse or keyboard while a command is running.

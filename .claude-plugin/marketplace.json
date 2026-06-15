@@ -9,8 +9,8 @@
     {
       "name": "wechat",
       "source": "./",
-      "description": "Claude Skills for WeChat",
-      "version": "1.0.0"
+      "description": "WeChat Skill for macOS Accessibility-based status, chat opening, text input, and text sending",
+      "version": "1.1.0"
     }
   ]
 }
